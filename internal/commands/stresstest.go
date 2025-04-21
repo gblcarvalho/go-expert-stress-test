@@ -13,24 +13,36 @@ type StressTestCMD struct {
 }
 
 func NewStressTestCMD() *StressTestCMD {
-	cmd := &cobra.Command{
-		Use:   "go-expert-stress-test --url <URL> --requests <total> --concurrency <concurrency>",
-		Short: "Perform simultaneous requests for stress test",
-		Long:  `The program performs multiple simultaneous HTTP requests based on the provided parameters and generates a detailed report with the results.`,
-	}
 	stCMD := &StressTestCMD{
-		cmd:           cmd,
 		makeRequestUC: usecase.NewMakeRequestUC(),
 	}
-	stCMD.initCMD()
-	return stCMD
-}
 
-func (st *StressTestCMD) initCMD() {
-	st.cmd.Flags().String("url", "", "uso")
-	st.cmd.MarkFlagRequired("url")
-	st.cmd.Flags().Int("requests", 1, "uso")
-	st.cmd.Flags().Int("concurrency", 1, "uso")
+	cmd := &cobra.Command{
+		Use:   "go-expert-stress-test",
+		Short: "Perform simultaneous requests for stress test",
+		Long:  `The program performs multiple simultaneous HTTP requests based on the provided parameters and generates a detailed report with the results.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			url, _ := cmd.Flags().GetString("url")
+			requests, _ := cmd.Flags().GetInt("requests")
+			concurrency, _ := cmd.Flags().GetInt("concurrency")
+
+			fmt.Println("Executing...")
+			report, err := stCMD.makeRequestUC.Execute(url, requests, concurrency)
+			if err != nil {
+				return err
+			}
+			stCMD.printReport(report)
+			return nil
+		},
+	}
+
+	cmd.Flags().String("url", "", "URL to send requests to")
+	cmd.Flags().Int("requests", 1, "Total number of requests to make")
+	cmd.Flags().Int("concurrency", 1, "Number of simultaneous requests")
+	cmd.MarkFlagRequired("url")
+
+	stCMD.cmd = cmd
+	return stCMD
 }
 
 func (st *StressTestCMD) printReport(report *usecase.MakeRequestUCOutput) {
@@ -49,29 +61,5 @@ func (st *StressTestCMD) printReport(report *usecase.MakeRequestUCOutput) {
 }
 
 func (st *StressTestCMD) Execute() error {
-	err := st.cmd.Execute()
-	if err != nil {
-		return err
-	}
-	url, err := st.cmd.Flags().GetString("url")
-	if err != nil {
-		return err
-	}
-	requests, err := st.cmd.Flags().GetInt("requests")
-	if err != nil {
-		return err
-	}
-	concurrency, err := st.cmd.Flags().GetInt("concurrency")
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Executing ....")
-	report, err := st.makeRequestUC.Execute(url, requests, concurrency)
-	if err != nil {
-		return err
-	}
-
-	st.printReport(report)
-	return nil
+	return st.cmd.Execute()
 }
