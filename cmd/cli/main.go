@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"github.com/gblcarvalho/go-expert-stress-test/internal/commands"
+)
 
 func main() {
-	fmt.Println("hello")
+	cmd := commands.NewStressTestCMD()
+	err := cmd.Execute()
+	if err != nil {
+		fmt.Printf("error: %v \n", err)
+		os.Exit(1)
+	}
 }
